@@ -1,0 +1,46 @@
+- name: Download RKE2 installation script
+  get_url:
+    url: https://get.rke2.io 
+    dest: ~/install.sh
+    mode: '0755'
+
+- name: Install RKE2
+  shell: INSTALL_RKE2_VERSION={{ INSTALL_RKE2_VERSION }} ~/install.sh
+  args:
+    creates: /usr/local/bin/rke2
+
+- name: Create cluster configuration directory
+  file:
+    path: /etc/rancher/rke2/config.yaml.d
+    state: directory
+
+- name: Create RKE2 configuration file for masters
+  template:
+    src: config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml.d/10-rke2-config.yaml
+    
+- name: Create cluster configuration directory
+  file:
+    path: /var/lib/rancher/rke2/server/manifests/
+    state: directory
+
+- name: Create RKE2 configuration file for masters
+  template:
+    src: cilium.yaml.j2
+    dest: /var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml
+
+- name: Enable and start RKE2 server
+  systemd:
+    name: rke2-server
+    enabled: yes
+    state: started
+  when: inventory_hostname == 'master1' and ansible_check_mode == false
+  notify: Restart RKE2
+
+- name: Start RKE2 server for other masters
+  systemd:
+    name: rke2-server
+    enabled: yes
+    state: started
+  when: inventory_hostname != 'master1' and ansible_check_mode == false
+  notify: Restart RKE2

@@ -1,0 +1,12 @@
+{% if inventory_hostname == 'master1' %}
+token: boop
+node-taint: []
+write-kubeconfig-mode: "0644"
+cni: cilium
+{% else %}
+server: https://{{ hostvars['master1']['ansible_host'] }}:9345
+token: boop
+node-taint: []
+write-kubeconfig-mode: "0644"
+cni: cilium
+{% endif %}
